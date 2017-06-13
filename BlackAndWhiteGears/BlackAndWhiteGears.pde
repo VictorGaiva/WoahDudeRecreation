@@ -17,7 +17,7 @@ int GearColor2         = 60;  //keep the same as TeethColor
 int GearDotColor       = 50;
 
 //Options. Change however you want
-Boolean HasTeeth       = false;
+Boolean HasTeeth       = true;
 Boolean HasGearDot     = true;
 Boolean HasTable       = true;
 
@@ -26,6 +26,11 @@ float StartX = FirstX - (SmallGearRadius/2) - BorderDistance;
 float StartY = FirstY - (SmallGearRadius/2) - BorderDistance;
 float EndX = ((SmallGears-1)%int(sqrt(SmallGears))*(SmallGearRadius+BigGearRadius)/2*sqrt(2)) + FirstX + (SmallGearRadius/2) + BorderDistance;
 float EndY = ((SmallGears/int(sqrt(SmallGears))-1)*(SmallGearRadius+BigGearRadius)/2*sqrt(2)) + FirstY + (SmallGearRadius/2) + BorderDistance;
+Boolean followsMouse = false;
+int gearIndex = -1;
+float baseAngle = 0;
+float angleDiff = 0;
+PVector MousePos = new PVector();
 
 class Gear {
   float RotSpeed;
@@ -106,10 +111,8 @@ class Gear {
   }
   
   void update() {
-    float Rotation = map(frameCount%840, 0, width, 0, radians(720));
     
-    this.Angle = this.Direction*Rotation/this.Diameter*60;
-    
+    this.Angle = this.Direction*(baseAngle+angleDiff)/this.Diameter*60;
     
     if (this.Angle >= TWO_PI)
       this.Angle -= TWO_PI;
@@ -150,7 +153,9 @@ void draw() {
     rectMode(CORNERS);
     rect(StartX, StartY, EndX, EndY, BorderRadius, BorderRadius, BorderRadius, BorderRadius);
   }
-  
+  if(followsMouse){
+    angleDiff = angleBetween(gears.get(gearIndex).Pos.x, gears.get(gearIndex).Pos.y, MousePos.x, MousePos.y, gears.get(gearIndex).Pos.x, gears.get(gearIndex).Pos.y, mouseX, mouseY);
+  }
   //Draws each gear
   for (int i = 0; i < gears.size(); i++) {
     //Updates the rotation angle
@@ -160,7 +165,35 @@ void draw() {
     gears.get(i).draw();
   }
   //saveFrame("gears-######.png");
+  //if(frameCount >= 840)
+    //exit();
+  
 }
-void mouseClicked(){
-  HasTeeth = !HasTeeth;
+float angleBetween(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4){
+  PVector p1 = new PVector(x2-x1, y2-y1);
+  PVector p2 = new PVector(x4-x3, y4-y3);
+  return PVector.angleBetween(p1,p2);
+}
+void mousePressed(){
+  //HasTeeth = !HasTeeth;
+  followsMouse = true;
+  print("pof\n");
+  int index = 0;
+  float minDist = 99999;
+  float currDist;
+  MousePos.x = mouseX;
+  MousePos.y = mouseY;
+  for (int i = 0; i < gears.size(); i++) {
+    currDist = dist(gears.get(i).Pos.x, gears.get(i).Pos.y, mouseX, mouseY);
+    if(currDist <= minDist){
+      index = i;
+      minDist = currDist;
+    }
+  }
+  gearIndex = index;
+}
+void mouseReleased(){
+  followsMouse = false;
+  baseAngle += angleDiff;
+  angleDiff = 0;
 }
